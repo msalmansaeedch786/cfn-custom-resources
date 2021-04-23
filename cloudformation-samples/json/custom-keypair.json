@@ -1,0 +1,95 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "NorthBay Labs cfn-custom-resources Custom::KeyPair sample template.",
+    "Parameters": {
+        "CustomResourcesFunction": {
+            "Description": "The Lambda function name of the NorthBay Labs custom resources provider. Defaults to CFNCustomResourcesFunction.",
+            "Type": "String",
+            "Default": "CFNCustomResourcesFunction"
+        },
+        "Environment": {
+            "Type": "String",
+            "Default": "dev"
+        },
+        "KeyName": {
+            "Description": "The EC2 key pair name.",
+            "Type": "String",
+            "Default": "test-keyname"
+        },
+        "KmsKeyId": {
+            "Description": "KMS Key ID, alias, or ARN to use to do the encryption when stored in the Parameter Store. Set to an empty string to use the default KMS Key. Default is no KMS Key ID (empty string).",
+            "Type": "String",
+            "Default": ""
+        },
+        "RotateOnUpdate": {
+            "Description": "If true will generate a new key pair on update. Default is false.",
+            "Type": "String",
+            "Default": false,
+            "AllowedValues": [
+                true,
+                false
+            ]
+        }
+    },
+    "Resources": {
+        "KeyPair": {
+            "Type": "Custom::KeyPair",
+            "Properties": {
+                "Description": "KeyPair Created by cfn-custom-resources",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "KmsKeyId": {
+                    "Ref": "KmsKeyId"
+                },
+                "NoEcho": true,
+                "RotateOnUpdate": {
+                    "Ref": "RotateOnUpdate"
+                },
+                "SecretPath": {
+                    "Fn::Sub": "/northbaylabs/${Environment}/cfn-custom-resources/keypair"
+                },
+                "ServiceToken": {
+                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CustomResourcesFunction}-${Environment}"
+                },
+                "Tags": [
+                    {
+                        "Key": "ENV",
+                        "Value": {
+                            "Ref": "Environment"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "KeyName": {
+            "Description": "The name of the created EC2 key pair.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "KeyPair",
+                    "KeyName"
+                ]
+            }
+        },
+        "KeyFingerprint": {
+            "Description": "The MD5 public key fingerprint for the created key pair.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "KeyPair",
+                    "KeyFingerprint"
+                ]
+            }
+        },
+        "SecretPath": {
+            "Description": "The SSM Parameter Store path where the key pair information is stored.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "KeyPair",
+                    "SecretPath"
+                ]
+            }
+        }
+    }
+}

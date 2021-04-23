@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CloudFormation Custom Resource Provider
+Parameters:
+  Environment:
+    Type: String
+    Description: Value for the ENV environment variable.
+    AllowedPattern: '[A-Za-z][A-Za-z0-9]+'
+  Timeout:
+    Type: Number
+    Default: 15
+    Description: Lambda timeout setting. Default is 15 seconds.
+    MinValue: 6
+    MaxValue: 30
+
+Resources:
+  CFNCustomResourcesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Lambda function that provides custom resources for CloudFormation.
+      FunctionName: !Sub 'CFNCustomResourcesFunction-${Environment}'
+      Handler: index.handler
+      Timeout: !Ref Timeout
+      CodeUri: .
+      Runtime: nodejs10.x
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+          LOG_DEBUG: 'false'
+      Tags:
+        Env: !Ref Environment
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Action:
+                - ec2:CreateKeyPair
+                - ec2:DeleteKeyPair
+                - ec2:DescribeKeyPairs
+                - ec2:ImportKeyPair
+                - ec2:DescribeImages
+                - iam:CreateAccessKey
+                - iam:DeleteAccessKey
+                - iam:PassRole
+                - iam:UpdateAccessKey
+                - kms:Decrypt
+                - kms:Encrypt
+                - logs:deleteSubscriptionFilter
+                - logs:describeSubscriptionFilters
+                - logs:putSubscriptionFilter
+                - ssm:DeleteParameter
+                - ssm:DeleteParameters
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:PutParameter
+                - ssm:AddTagsToResource
+                - ssm:ListTagsForResource
+                - ssm:RemoveTagsFromResource
+              Effect: Allow
+              Resource: '*'
+
+Outputs:
+  ServiceToken:
+    Description: CFNCustomResources ServiceToken for use in the CloudFormation templates.
+    Value: !GetAtt CFNCustomResourcesFunction.Arn

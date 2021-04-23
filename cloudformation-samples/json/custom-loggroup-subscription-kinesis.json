@@ -1,0 +1,80 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "NorthBay Labs cfn-custom-resources Custom::LogGroupSubscription Kinesis stream sample template.",
+    "Parameters": {
+        "CustomResourcesFunction": {
+            "Description": "The Lambda function name of the NorthBay Labs custom resources provider. Defaults to CFNCustomResourcesFunction.",
+            "Type": "String",
+            "Default": "CFNCustomResourcesFunction"
+        },
+        "Environment": {
+            "Type": "String",
+            "Default": "dev"
+        },
+        "FilterPattern": {
+            "Type": "String",
+            "Description": "The filter pattern to filter log events with. Defaults to no filter pattern (blank).",
+            "Default": ""
+        },
+        "ForceSubscription": {
+            "Type": "String",
+            "Default": false,
+            "AllowedValues": [
+                true,
+                false
+            ]
+        },
+        "LambdaFunction": {
+            "Description": "The Lambda function name to set the subscription filter for. Defaults to SimpleLambdaFunction.",
+            "Type": "String",
+            "Default": "SimpleLambdaFunction"
+        }
+    },
+    "Resources": {
+        "LogGroupSubscriptionFilter": {
+            "Type": "Custom::LogGroupSubscription",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CustomResourcesFunction }-${Environment}"
+                },
+                "DestinationArn": {
+                    "Fn::Sub": "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/NorthBayLabsTesting"
+                },
+                "Distribution": "Random",
+                "FilterName": "KinesisStream_NorthBayLabsTesting",
+                "FilterPattern": {
+                    "Ref": "FilterPattern"
+                },
+                "ForceSubscription": {
+                    "Ref": "ForceSubscription"
+                },
+                "LogGroupName": {
+                    "Fn::Sub": "/aws/lambda/${LambdaFunction}-${Environment}"
+                },
+                "RoleArn": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/CWLtoKinesisRole"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "SubscriptionFilterName": {
+            "Description": "The name of the subscription filter that was added to the log group.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "LogGroupSubscriptionFilter",
+                    "FilterName"
+                ]
+            }
+        },
+        "LogGroupName": {
+            "Description": "The name of the LogGroup that the subscription filter was added to.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "LogGroupSubscriptionFilter",
+                    "LogGroupName"
+                ]
+            }
+        }
+    }
+}

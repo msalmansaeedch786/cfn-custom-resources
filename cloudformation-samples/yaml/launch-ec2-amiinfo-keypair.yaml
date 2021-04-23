@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: NorthBay Labs cfn-custom-resources sample template that uses Custom::AMIInfo and 
+             Custom::KeyPair custom resources to configure and launch an EC2 instance.
+Parameters:
+  CustomResourcesFunction:
+    Description: The Lambda function name of the NorthBay Labs custom resources provider. Defaults to CFNCustomResourcesFunction.
+    Type: String
+    Default: CFNCustomResourcesFunction
+  Environment:
+    Type: String
+    Default: dev
+  InstanceType:
+    Description: EC2 instance type. Defaults to t3.micro
+    Type: String
+    Default: t3.micro
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+Resources:
+  SampleInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !GetAtt AMIInfo.Id
+      InstanceType: !Ref InstanceType
+      KeyName: !GetAtt KeyPair.KeyName
+      Tags:
+        -
+          Key: ENV
+          Value: !Ref Environment
+
+  AMIInfo:
+    Type: Custom::AMIInfo
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CustomResourcesFunction}-${Environment}'
+      InstanceType: !Ref InstanceType
+      LinuxVersion: Linux2
+      Region: !Ref AWS::Region
+
+  KeyPair:
+    Type: Custom::KeyPair
+    Properties:
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CustomResourcesFunction}-${Environment}'
+      KeyName: !Sub 'amiinfo-keypair-${Environment}'
+      SecretPath: !Sub '/northbaylabs/cfn-custom-resources/amiinfo-keypair-${Environment}'
+      Tags:
+        -
+          Key: ENV
+          Value: !Ref Environment
+
+Outputs:
+  AMIID:
+    Description: The Amazon EC2 instance AMI ID.
+    Value: !GetAtt AMIInfo.Id
+  InstanceId:
+    Description: The EC2 instance ID for the launched EC2 instance.
+    Value: !Ref SampleInstance
+  KeyName:
+    Description: The EC2 Key Pair name.
+    Value: !GetAtt KeyPair.KeyName
+  SecretPath:
+    Description: The SSM Parameter Store path where the key pair information is stored.
+    Value: !GetAtt KeyPair.SecretPath
+  

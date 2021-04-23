@@ -1,0 +1,64 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "NorthBay Labs cfn-custom-resources Custom::ImportKeyPair sample template.",
+    "Parameters": {
+        "CustomResourcesFunction": {
+            "Description": "The Lambda function name of the NorthBay Labs custom resources provider. Defaults to CFNCustomResourcesFunction.",
+            "Type": "String",
+            "Default": "CFNCustomResourcesFunction"
+        },
+        "Environment": {
+            "Type": "String",
+            "Default": "dev"
+        },
+        "KeyName": {
+            "Description": "The EC2 KeyPair name.",
+            "Type": "String",
+            "Default": "/northbaylabs/dev/my-imported-keypair",
+            "AllowedPattern": "^[a-zA-Z0-9_\\.\\-/]+$",
+            "MinLength": 3
+        },
+        "PublicKeyMaterial": {
+            "Description": "MD5 public key material to import to create the key pair.",
+            "Type": "String",
+            "Default": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCvAfZKBKPjnanrFm59ImlXEPQOcG8JYARMTTpwzKZMW0cZD6R+/KzWHFSOMKVshrq/xkWyw9tSeoonHaqt5qyFerm9awilyf9TkVnNB3v40H46tkdY8othMJGHFgJW3tjuFvcVcFiP7tcw1OjEmkMuilFwVE+xW5GosL/HtQcye+cM/oJ/L9iwHTjJhx7Dk6tnigDRzGZLGy6BpH4KbE6wFg0HPW79IJQdXMUM2n/tS8B49OzonSVt98mQKjO9O2xgycXuS/Ic6CyvNuJWBa62s0VOaDPDsC1DnCG5B1cnxeWosptNvIorDN1zvO7Ygh2HJGhg9O/fR7fphsIsfHHn my-key",
+            "MinLength": 3
+        }
+    },
+    "Resources": {
+        "ImportedKeyPair": {
+            "Type": "Custom::ImportKeyPair",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CustomResourcesFunction}-${Environment}"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "PublicKeyMaterial": {
+                    "Ref": "PublicKeyMaterial"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "KeyName": {
+            "Description": "The EC2 KeyPair name.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ImportedKeyPair",
+                    "KeyName"
+                ]
+            }
+        },
+        "KeyFingerprint": {
+            "Description": "The MD5 public key fingerprint for the imported public key material.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "ImportedKeyPair",
+                    "KeyFingerprint"
+                ]
+            }
+        }
+    }
+}
